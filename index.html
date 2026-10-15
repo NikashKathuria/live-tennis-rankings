@@ -214,6 +214,31 @@ code{background:var(--head);padding:1px 5px;border-radius:4px}
 body[data-tour=atp] .pstat,body[data-tour=atp] .chip{border-radius:6px}
 body[data-tour=wta] .pstat{border-radius:14px}
 body[data-tour=wta] #pview tbody td:first-child{border-radius:12px 0 0 12px}
+.fl.blank{display:inline-block;visibility:hidden}
+.mvs,.sub2{display:none}
+.star.big{font-size:22px;vertical-align:middle}
+@media(max-width:760px){
+  .hp{display:none!important}
+  /* one slim header line: dot, tour tabs, live pill */
+  header{position:sticky}
+  .top{flex-wrap:nowrap;gap:8px;padding:7px 0}
+  #brand,#wkpill,#upd{display:none}
+  .brand i{margin:0}
+  .status{margin-left:auto;flex-wrap:nowrap;min-width:0;gap:6px}
+  #livepill{overflow:hidden;text-overflow:ellipsis;max-width:52vw;font-size:10px}
+  body[data-tour] .seg button{padding:5px 12px!important;font-size:13px!important}
+  /* each player is one row: rank, name with the match as a second line, points */
+  td.rk{width:46px;padding-left:8px;text-align:center}
+  .mvs{display:block;font-size:10px;font-weight:700;line-height:1.2;margin-top:2px}
+  td.pl{white-space:normal;min-width:0}
+  td.pl .cc{display:none}
+  .sub2{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3;padding-left:30px}
+  td.pl a.nm{font-size:14px!important}
+  body[data-tour=wta] td.pl{max-width:none}
+  th,td{padding:8px 6px!important}
+  td.lp b{font-size:15px!important}
+  .hero{padding-top:14px!important}
+}
 /* ATP calmer */
 body[data-tour=atp]::before{background:radial-gradient(800px 380px at 90% -10%,rgba(34,211,238,.08),transparent 62%)!important}
 body[data-tour=atp]{--bg:#0a1020;--card:#0f1830;--rowbg:#0f1830;--line:#1c2a4a;--hl:#142241;--accent:#38bdf8;--accent2:#7dd3fc}
@@ -290,8 +315,8 @@ body[data-tour=wta] td.det{border-radius:12px!important}
   </div>
   <div class="tw"><table>
     <thead><tr>
-      <th>Live</th><th>Move</th><th></th><th>Player</th><th class="hm n">Age</th>
-      <th class="n hm">Official</th><th class="n hm">Defending</th><th class="n hm">Earned</th><th class="n">Live pts</th><th class="n">+/-</th><th>This week</th>
+      <th>Live</th><th class="hp">Move</th><th class="hp"></th><th>Player</th><th class="hm n">Age</th>
+      <th class="n hm">Official</th><th class="n hm">Defending</th><th class="n hm">Earned</th><th class="n">Live pts</th><th class="n">+/-</th><th class="hp">This week</th>
     </tr></thead>
     <tbody id="rows"><tr><td colspan="11" class="load" id="loadmsg">Loading rankings…</td></tr></tbody>
   </table></div>
@@ -306,7 +331,7 @@ body[data-tour=wta] td.det{border-radius:12px!important}
   Not affiliated with the ATP or WTA.
 </footer>
 
-<script src="engine.js?v=6"></script>
+<script src="engine.js?v=7"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -473,12 +498,12 @@ function render(){
   const body=rows.map(r=>{
     const a=T.ath[r.p.id]||{},old=prev[r.p.id],fl=old&&old!==r.rank?(r.rank<old?"fup":"fdn"):"",op=S.open.has(r.p.id);
     return`<tr class="r ${fl} ${op?"open":""} ${r.move>0?"mu":r.move<0?"md":""} ${r.rank<=3?"t"+r.rank:""}" data-id="${r.p.id}">
-      <td class="rk"><span class="rb${r.tied?" tie":""}" ${r.tied?'title="Level on points with another player; the tours break ties by tournaments played, which this free data doesn\'t include"':""}>${r.tied?"T":""}${r.rank}</span></td><td>${mvHtml(r.move)}</td>
-      <td><button class="star ${S.watch.has(r.p.id)?"on":""}" data-star="${r.p.id}" aria-label="Watch">${S.watch.has(r.p.id)?"★":"☆"}</button></td>
-      <td>${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:""}<a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span></td>
+      <td class="rk"><span class="rb${r.tied?" tie":""}" ${r.tied?'title="Level on points with another player; the tours break ties by tournaments played, which this free data doesn\'t include"':""}>${r.tied?"T":""}${r.rank}</span><div class="mvs">${r.move?`<span class="${r.move>0?"up":"dn"}">${r.move>0?"▲":"▼"}${Math.abs(r.move)}</span>`:""}</div></td><td class="hp">${mvHtml(r.move)}</td>
+      <td class="hp"><button class="star ${S.watch.has(r.p.id)?"on":""}" data-star="${r.p.id}" aria-label="Watch">${S.watch.has(r.p.id)?"★":"☆"}</button></td>
+      <td class="pl">${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:`<span class="fl blank"></span>`}<a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span>${r.best?`<div class="sub2">${statusHtml(r)}</div>`:""}</td>
       <td class="hm n">${a.age??""}</td><td class="n hm">${fmt(r.p.points)}</td>
       <td class="n hm">${r.def?"−"+fmt(r.def):"–"}</td><td class="n hm">${r.earned?"+"+fmt(r.earned):"–"}</td>
-      <td class="n lp"><b>${fmt(r.live)}</b></td><td class="n">${diffHtml(r.diff)}</td><td class="wk">${statusHtml(r)}</td></tr>`
+      <td class="n lp"><b>${fmt(r.live)}</b></td><td class="n">${diffHtml(r.diff)}</td><td class="wk hp">${statusHtml(r)}</td></tr>`
       +(op?`<tr><td class="det" colspan="11">${detail(T,d,r)}</td></tr>`:"");
   }).join("");
   $("#rows").innerHTML=body||`<tr><td colspan="11" class="empty">${S.f==="watch"?"No players on your watchlist yet. Tap ☆ next to a player.":"No players match."}</td></tr>`;
@@ -543,7 +568,7 @@ function historyHtml(h){
   const view=h.filter(w=>!cut||w.d>=cut);
   const fd=d=>d?new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
   return`<div class="pstats">
-    <div class="pstat"><b>#${best.rank}</b><span>Career high · from ${esc(fd(best.d))}${atBest>1?` · ${atBest} weeks`:""}</span></div>
+    <div class="pstat"><b>#${best.rank}</b><span>Career high · first reached ${esc(fd(best.d))}${atBest>1?` · ${atBest} weeks in total`:""}</span></div>
     <div class="pstat"><b>${top10}</b><span>Weeks in top 10</span></div>
     <div class="pstat"><b>${no1}</b><span>Weeks at #1</span></div>
     <div class="pstat"><b>${fmt(bestPts.pts)}</b><span>Most points · ranking of ${esc(fd(bestPts.d))}</span></div>
@@ -571,7 +596,7 @@ function playerHtml(T,d,row){
   const hist=(S.pc[S.tour+p.id]||{}).hist;
   return`<a class="back" href="#${tour}">← ${tour.toUpperCase()} live rankings</a>
   <div class="ph"><div><div class="eyebrow">${tour.toUpperCase()} TOUR · SINGLES</div>
-    <h1>${flag}${esc(a.name||"Player")}</h1><div class="hsub">${bio}</div></div>
+    <h1>${flag}${esc(a.name||"Player")} <button class="star big ${S.watch.has(p.id)?"on":""}" data-star="${p.id}" aria-label="Add to watchlist" title="Add to watchlist">${S.watch.has(p.id)?"★":"☆"}</button></h1><div class="hsub">${bio}</div></div>
     <div class="phr">
       <div class="pstat big"><b>${row.tied?"T":""}${row.rank}</b><span>Live rank ${mvHtml(row.move)}</span></div>
       <div class="pstat big"><b>${fmt(row.live)}</b><span>Live points ${diffHtml(row.diff)}</span></div>
@@ -592,7 +617,7 @@ function renderPlayer(T,d){
     Engine.fetchAthleteDetail(id).then(x=>{S.pc[key].detail=x;if(S.view.id===id)render()}).catch(()=>{S.pc[key].detail={}});
     const getJ=u=>fetch(u).then(r=>r.ok?r.json():Promise.reject());
     // local server API first; on static hosting (GitHub Pages) fall back to the prebuilt per-player file
-    getJ(`api/history?tour=${S.tour}&id=${id}`).catch(()=>getJ(`data/history/${S.tour}/${id}.json`)).then(j=>{S.pc[key].hist=j.weeks}).catch(()=>{S.pc[key].hist=null}).finally(()=>{if(S.view.id===id)render()});
+    (/^(localhost|127\.|\[::1\])/.test(location.hostname)?getJ(`api/history?tour=${S.tour}&id=${id}`).catch(()=>getJ(`data/history/${S.tour}/${id}.json`)):getJ(`data/history/${S.tour}/${id}.json`)).then(j=>{S.pc[key].hist=j.weeks}).catch(()=>{S.pc[key].hist=null}).finally(()=>{if(S.view.id===id)render()});
   }
   pv.innerHTML=playerHtml(T,d,row);
   document.title=`${(T.ath[id]||{}).name||"Player"} – Live Rankings`;
