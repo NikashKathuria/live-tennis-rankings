@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23d4e157%27 stroke=%27%231f7a4d%27 stroke-width=%272%27/%3E%3Cpath d=%27M5 9c6 4 6 10 0 14M27 9c-6 4-6 10 0 14%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%272%27/%3E%3C/svg%3E">
+<title>Live Rankings – ATP & WTA Singles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<style>
+/* ============ shared structure ============ */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 var(--font-body);transition:background .3s,color .3s}
+.wrap{max-width:1150px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px)}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 0}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px}
+.brand i{display:inline-block;width:16px;height:16px;border-radius:50%}
+.seg{display:flex;overflow:hidden}
+.seg button{border:0;background:none;color:var(--ink);cursor:pointer;font-family:inherit;transition:.15s}
+.status{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.pill{padding:3px 10px;white-space:nowrap;font-weight:700;font-size:11px}
+.pill.live{color:var(--live);border-color:var(--live)!important;background:none!important}
+.pill.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--live);margin-right:6px;animation:pl 1.4s infinite}
+@keyframes pl{50%{opacity:.25}}
+.eyebrow{font-weight:700;color:var(--accent)}
+.hero h1{margin:0;font-family:var(--font-display);line-height:.95}
+.hsub{color:var(--muted);margin-top:8px}
+.ribbon{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.rstat b{display:block;font-family:var(--font-display);font-size:26px;line-height:1}
+.rstat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.movers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.mcol h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.mchips{display:flex;gap:6px;flex-wrap:wrap}
+.mchip{padding:4px 10px;font-size:13px;white-space:nowrap}
+.mchip b{margin-left:6px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:6px 0 12px}
+.bar input,.bar select{padding:8px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px}
+.bar input{flex:1;min-width:150px;max-width:260px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer;transition:.15s}
+details.ev{background:var(--card);border:1px solid var(--line);margin:0 0 14px}
+details.ev summary{padding:11px 14px;cursor:pointer;font-weight:600;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+details.ev summary span{color:var(--muted);font-weight:400}
+.evl{padding:0 14px 12px}
+.evr{display:grid;grid-template-columns:minmax(160px,1.6fr) auto auto 1fr;gap:6px 14px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.evr select{padding:3px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px}
+.evr .t{color:var(--muted);font-size:12px}
+.warn{color:var(--warn)}
+.note{color:var(--muted);font-size:12px;padding:8px 0 0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:left;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.n{text-align:right}
+tr.r{cursor:pointer}
+td{background:var(--rowbg)}
+.rk{width:56px}
+.rb{display:inline-block}
+.mv{font-size:12px;font-weight:700;min-width:44px;display:inline-block}
+.up{color:var(--up)}.dn{color:var(--dn)}.zero{color:var(--muted)}
+.fl{width:22px;height:15px;object-fit:cover;margin-right:8px;vertical-align:-2px;border:1px solid var(--line)}
+.nm{font-weight:600}.cc{color:var(--muted);font-size:11px;margin-left:5px}
+.star{cursor:pointer;color:var(--muted);font-size:16px;background:none;border:0;padding:0 4px}.star.on{color:var(--star)}
+.pd{color:var(--up);font-weight:700}.pn{color:var(--dn);font-weight:700}
+.lv{color:var(--live);font-weight:700}
+.lv::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--live);margin-right:4px;animation:pl 1.4s infinite}
+.st{color:var(--muted)}
+td.wk{max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.fup td{animation:fu 2.4s ease-out}.fdn td{animation:fd 2.4s ease-out}
+@keyframes fu{from{background:rgba(52,211,153,.4)}to{background:var(--rowbg)}}
+@keyframes fd{from{background:rgba(251,113,133,.35)}to{background:var(--rowbg)}}
+td.det{white-space:normal;background:var(--hl);padding:14px 18px}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.dg h4{margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.empty,.load{padding:40px 20px;text-align:center;color:var(--muted)}
+.err{background:rgba(225,29,72,.12);color:var(--dn);border:1px solid var(--dn);padding:10px 14px;margin:12px 0}
+footer{color:var(--muted);font-size:12px;padding:20px 16px 60px;max-width:1150px;margin:0 auto}
+
+/* ============ ATP: stadium night ============ */
+body[data-tour=atp]{
+  --bg:#060b17;--card:#0d1527;--rowbg:#0d1527;--ink:#e8efff;--muted:#7f90b3;--line:#1b2a49;--head:#111c35;--hl:#13213f;
+  --accent:#22d3ee;--accent2:#d4ff3a;--up:#34d399;--dn:#fb7185;--live:#ff4d5e;--warn:#f4c14e;--star:#d4ff3a;
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--font-body:"Inter",system-ui,sans-serif}
+body[data-tour=atp]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(900px 480px at 88% -8%,rgba(34,211,238,.20),transparent 62%),
+             radial-gradient(700px 420px at -5% 30%,rgba(59,92,255,.16),transparent 60%),
+             repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 96px),
+             repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 96px)}
+body[data-tour=atp] header{background:rgba(6,11,23,.82);border-bottom:1px solid var(--line)}
+body[data-tour=atp] .brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+body[data-tour=atp] .brand i{border-radius:0;background:var(--accent2);transform:skewX(-14deg);width:12px;height:18px}
+body[data-tour=atp] .seg{border:1px solid var(--line);border-radius:2px}
+body[data-tour=atp] .seg button{padding:8px 22px;font-weight:800;letter-spacing:.14em;font-family:var(--font-display);font-size:16px}
+body[data-tour=atp] .seg button[aria-pressed=true]{background:var(--accent);color:#04121a}
+body[data-tour=atp] .pill{border:1px solid var(--line);background:var(--head);border-radius:2px;letter-spacing:.06em}
+body[data-tour=atp] .hero{padding:30px 0 4px}
+body[data-tour=atp] .eyebrow{font-family:var(--font-display);letter-spacing:.38em;font-size:13px}
+body[data-tour=atp] .hero h1{font-size:clamp(46px,9vw,92px);font-weight:800;text-transform:uppercase;letter-spacing:.005em;margin-top:6px}
+body[data-tour=atp] .hero h1 em{font-style:normal;color:var(--accent)}
+body[data-tour=atp] .ribbon{gap:0;border:1px solid var(--line);background:rgba(13,21,39,.7);width:fit-content;max-width:100%}
+body[data-tour=atp] .rstat{padding:10px 22px;border-right:1px solid var(--line)}
+body[data-tour=atp] .rstat:last-child{border:0}
+body[data-tour=atp] .rstat b{color:var(--accent2)}
+body[data-tour=atp] .mchip{background:var(--head);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px}
+body[data-tour=atp] .bar input,body[data-tour=atp] .bar select{border-radius:2px}
+body[data-tour=atp] .chip{border-radius:2px;padding:7px 14px;text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:600}
+body[data-tour=atp] .chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#04121a}
+body[data-tour=atp] details.ev{border-radius:2px}
+body[data-tour=atp] .tw{border:1px solid var(--line);background:var(--card)}
+body[data-tour=atp] thead th{background:var(--head);font-family:var(--font-display);font-size:13px;letter-spacing:.16em;border-bottom:1px solid var(--accent)}
+body[data-tour=atp] td{border-bottom:1px solid var(--line)}
+body[data-tour=atp] tr.r:hover td{background:var(--hl)}
+body[data-tour=atp] tr.open td{background:var(--hl)}
+body[data-tour=atp] tr.mu td:first-child{box-shadow:inset 3px 0 0 var(--up)}
+body[data-tour=atp] tr.md td:first-child{box-shadow:inset 3px 0 0 var(--dn)}
+body[data-tour=atp] .rb{font-family:var(--font-display);font-weight:800;font-size:24px;line-height:1}
+body[data-tour=atp] tr.t1 .rb{color:var(--accent2)}
+body[data-tour=atp] tr.t3 .rb{color:var(--accent)}
+body[data-tour=atp] td.lp b{font-family:var(--font-display);font-size:20px;letter-spacing:.02em}
+body[data-tour=atp] .nm{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+body[data-tour=atp] .fl{border-radius:1px}
+
+/* ============ WTA: soft editorial ============ */
+body[data-tour=wta]{
+  --bg:#fff6f1;--card:#ffffff;--rowbg:#ffffff;--ink:#2a1633;--muted:#8d7796;--line:#f1dfe6;--head:#fbeaf1;--hl:#fff1f8;
+  --accent:#7c3aed;--accent2:#ec4899;--up:#0f9d6b;--dn:#e11d48;--live:#e11d48;--warn:#b45309;--star:#f59e0b;
+  --font-display:"Playfair Display",Georgia,serif;--font-body:"DM Sans",system-ui,sans-serif}
+body[data-tour=wta]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(620px 420px at 8% 4%,rgba(255,170,205,.55),transparent 65%),
+             radial-gradient(700px 480px at 96% 12%,rgba(196,170,255,.50),transparent 65%),
+             radial-gradient(640px 420px at 70% 100%,rgba(170,215,255,.40),transparent 65%)}
+body[data-tour=wta] header{background:rgba(255,246,241,.8);border-bottom:1px solid rgba(124,58,237,.12)}
+body[data-tour=wta] .brand{font-weight:700;font-style:italic;font-size:22px}
+body[data-tour=wta] .brand i{background:linear-gradient(135deg,var(--accent2),var(--accent))}
+body[data-tour=wta] .seg{background:#fff;border:1px solid var(--line);border-radius:99px;padding:3px;box-shadow:0 2px 10px rgba(124,58,237,.08)}
+body[data-tour=wta] .seg button{padding:6px 20px;border-radius:99px;font-weight:700}
+body[data-tour=wta] .seg button[aria-pressed=true]{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff}
+body[data-tour=wta] .pill{border:1px solid var(--line);background:#fff;border-radius:99px}
+body[data-tour=wta] .hero{padding:36px 0 6px;text-align:center}
+body[data-tour=wta] .eyebrow{letter-spacing:.3em;font-size:12px;text-transform:uppercase}
+body[data-tour=wta] .hero h1{font-size:clamp(40px,8vw,76px);font-weight:700;margin:8px 0 2px}
+body[data-tour=wta] .hero h1 em{font-style:italic;background:linear-gradient(120deg,var(--accent2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+body[data-tour=wta] .ribbon{justify-content:center}
+body[data-tour=wta] .rstat{background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 20px;display:flex;align-items:baseline;gap:10px;box-shadow:0 2px 10px rgba(124,58,237,.06)}
+body[data-tour=wta] .rstat b{font-size:22px;color:var(--accent)}
+body[data-tour=wta] .movers{justify-items:center;text-align:center}
+body[data-tour=wta] .mchips{justify-content:center}
+body[data-tour=wta] .mchip{background:#fff;border:1px solid var(--line);border-radius:99px;box-shadow:0 2px 8px rgba(124,58,237,.06)}
+body[data-tour=wta] .bar{justify-content:center}
+body[data-tour=wta] .bar input,body[data-tour=wta] .bar select{border-radius:99px;padding:9px 16px}
+body[data-tour=wta] .chip{border-radius:99px;padding:7px 16px}
+body[data-tour=wta] .chip[aria-pressed=true]{background:linear-gradient(135deg,var(--accent2),var(--accent));border-color:transparent;color:#fff}
+body[data-tour=wta] details.ev{border-radius:20px;box-shadow:0 4px 16px rgba(124,58,237,.06)}
+body[data-tour=wta] .tw{background:none;border:0;padding:0 2px}
+body[data-tour=wta] table{border-collapse:separate;border-spacing:0 7px}
+body[data-tour=wta] thead th{padding:4px 10px;font-weight:600;letter-spacing:.1em}
+body[data-tour=wta] td{border:0;padding:12px 10px}
+body[data-tour=wta] tbody td:first-child{border-radius:16px 0 0 16px;padding-left:14px}
+body[data-tour=wta] tbody td:last-child{border-radius:0 16px 16px 0}
+body[data-tour=wta] tbody td{box-shadow:0 1px 0 rgba(124,58,237,.05)}
+body[data-tour=wta] tr.r:hover td{background:var(--hl)}
+body[data-tour=wta] tr.open td{background:var(--hl)}
+body[data-tour=wta] td.det{border-radius:16px!important;background:#fff8fc}
+body[data-tour=wta] .rb{width:34px;height:34px;line-height:34px;text-align:center;border-radius:50%;background:var(--head);font-family:var(--font-display);font-weight:700;font-size:15px}
+body[data-tour=wta] tr.t1 .rb{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#fff}
+body[data-tour=wta] tr.t2 .rb{background:linear-gradient(135deg,#d6d3e0,#9b95b3);color:#fff}
+body[data-tour=wta] tr.t3 .rb{background:linear-gradient(135deg,#fdba74,#c2763a);color:#fff}
+body[data-tour=wta] td.lp b{font-family:var(--font-display);font-size:17px}
+body[data-tour=wta] .fl{border-radius:50%;width:22px;height:22px;vertical-align:-6px}
+body[data-tour=wta] .nm{font-weight:700}
+
+@media(max-width:760px){.hm{display:none}th,td{padding:8px 6px}.status{margin-left:0}.evr{grid-template-columns:1fr 1fr}.movers{grid-template-columns:1fr}}
+
+/* ============ calmer pass: smaller type, quieter surfaces ============ */
+.hero{padding:22px 0 2px!important;text-align:left!important}
+.eyebrow{font-size:11px!important;letter-spacing:.16em!important;font-weight:600!important}
+.hero h1{font-size:clamp(28px,4vw,40px)!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important;margin-top:4px!important}
+.hsub{font-size:13px;margin-top:4px}
+.ribbon{display:flex!important;gap:18px!important;margin:12px 0 14px!important;border:0!important;background:none!important;padding:0!important;width:auto!important;justify-content:flex-start!important}
+.rstat,body[data-tour] .rstat{display:flex!important;align-items:baseline;gap:6px;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important}
+.rstat b{font-size:18px!important;font-weight:700!important;color:var(--ink)!important}
+.rstat span{font-size:12px!important;letter-spacing:0!important;text-transform:none!important}
+.mchip{font-size:12px!important}
+.movers{justify-items:start!important;text-align:left!important}
+.mchips{justify-content:flex-start!important}
+.bar{justify-content:flex-start!important}
+.status{font-size:12px}
+
+td.wk{max-width:230px!important}
+.hnote{margin-top:6px;font-size:12px;color:var(--muted);max-width:720px}
+.rb.tie{white-space:nowrap}
+body[data-tour=wta] .rb.tie{width:auto!important;min-width:26px;padding:0 7px;border-radius:13px!important}
+@media(max-width:760px){td.wk{max-width:150px!important}}
+/* player pages */
+a.nm{color:inherit;text-decoration:none}a.nm:hover{text-decoration:underline}
+a.mchip{color:inherit;text-decoration:none}a.mchip:hover{border-color:var(--accent)}
+.back{display:inline-block;margin:18px 0 6px;color:var(--muted);text-decoration:none;font-size:13px}.back:hover{color:var(--accent)}
+.ph{display:flex;gap:20px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px}
+.ph h1{font-family:var(--font-display);font-size:clamp(26px,4vw,38px);margin:4px 0 2px;line-height:1.05;display:flex;align-items:center;gap:10px}
+.fl.big{width:32px;height:22px}
+body[data-tour=wta] .fl.big{width:30px;height:30px;vertical-align:middle}
+.phr,.pstats{display:flex;gap:10px;flex-wrap:wrap}
+.pstat{background:var(--card);border:1px solid var(--line);padding:9px 14px;min-width:112px}
+.pstat b{display:block;font-family:var(--font-display);font-size:22px;line-height:1.15}
+.pstat.big b{font-size:28px}
+.pstat span{font-size:11px;color:var(--muted)}
+#pview h2{font-family:var(--font-display);font-size:19px;margin:26px 0 8px}
+.eqn{margin:0 0 10px;color:var(--muted)}.eqn b{color:var(--ink)}
+.tabs2{display:flex;gap:6px;margin:14px 0 6px}
+.chart{width:100%;height:auto;max-width:760px;display:block}
+.chart .cg{stroke:var(--line);stroke-width:1}.chart .ct{fill:var(--muted);font-size:10px}
+.chart .cl{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}.chart .cd{fill:var(--accent)}
+code{background:var(--head);padding:1px 5px;border-radius:4px}
+body[data-tour=atp] .pstat,body[data-tour=atp] .chip{border-radius:6px}
+body[data-tour=wta] .pstat{border-radius:14px}
+body[data-tour=wta] #pview tbody td:first-child{border-radius:12px 0 0 12px}
+/* ATP calmer */
+body[data-tour=atp]::before{background:radial-gradient(800px 380px at 90% -10%,rgba(34,211,238,.08),transparent 62%)!important}
+body[data-tour=atp]{--bg:#0a1020;--card:#0f1830;--rowbg:#0f1830;--line:#1c2a4a;--hl:#142241;--accent:#38bdf8;--accent2:#7dd3fc}
+body[data-tour=atp] .brand{letter-spacing:.06em!important;font-size:18px!important;font-weight:700!important}
+body[data-tour=atp] .brand i{background:var(--accent)!important;transform:none!important;width:10px!important;height:10px!important;border-radius:50%!important}
+body[data-tour=atp] .seg button{font-size:14px!important;letter-spacing:.06em!important;padding:6px 18px!important;font-weight:700!important}
+body[data-tour=atp] .seg button[aria-pressed=true]{background:rgba(56,189,248,.16)!important;color:var(--accent)!important;box-shadow:inset 0 -2px 0 var(--accent)}
+body[data-tour=atp] .hero h1 em{color:var(--accent)!important}
+body[data-tour=atp] .rstat b{color:var(--ink)!important}
+body[data-tour=atp] .chip{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:500!important;border-radius:6px!important;padding:6px 12px!important}
+body[data-tour=atp] .chip[aria-pressed=true]{background:rgba(56,189,248,.16)!important;color:var(--accent)!important;border-color:var(--accent)!important}
+body[data-tour=atp] .bar input,body[data-tour=atp] .bar select,body[data-tour=atp] details.ev,body[data-tour=atp] .tw{border-radius:6px!important}
+body[data-tour=atp] .mchip{border-radius:6px!important;border-left-width:1px!important}
+body[data-tour=atp] thead th{font-size:11px!important;letter-spacing:.1em!important;font-weight:600!important;border-bottom:1px solid var(--line)!important}
+body[data-tour=atp] .rb{font-size:16px!important;font-weight:700!important}
+body[data-tour=atp] tr.t1 .rb,body[data-tour=atp] tr.t3 .rb{color:var(--ink)!important}
+body[data-tour=atp] .nm{font-size:14px!important;text-transform:none!important;letter-spacing:0!important;font-family:var(--font-body)!important;font-weight:600!important}
+body[data-tour=atp] td.lp b{font-size:15px!important;font-family:var(--font-body)!important;font-weight:700!important}
+body[data-tour=atp] tr.mu td:first-child{box-shadow:inset 2px 0 0 var(--up)!important}
+body[data-tour=atp] tr.md td:first-child{box-shadow:inset 2px 0 0 var(--dn)!important}
+
+/* WTA calmer */
+body[data-tour=wta]::before{background:radial-gradient(560px 360px at 6% 0%,rgba(255,190,215,.32),transparent 65%),radial-gradient(620px 420px at 98% 6%,rgba(205,185,255,.28),transparent 65%)!important}
+body[data-tour=wta]{--bg:#fdf8f5;--accent:#8b5cf6;--accent2:#e879a9}
+body[data-tour=wta] .brand{font-size:19px!important;font-weight:600!important}
+body[data-tour=wta] .brand i{width:12px!important;height:12px!important;background:var(--accent)!important}
+body[data-tour=wta] .seg{box-shadow:none!important}
+body[data-tour=wta] .seg button{padding:5px 16px!important;font-weight:600!important}
+body[data-tour=wta] .seg button[aria-pressed=true]{background:rgba(139,92,246,.12)!important;color:var(--accent)!important}
+body[data-tour=wta] .hero h1{font-weight:600!important}
+body[data-tour=wta] .hero h1 em{background:none!important;-webkit-background-clip:initial!important;color:var(--accent)!important}
+body[data-tour=wta] .mchip{box-shadow:none!important}
+body[data-tour=wta] .chip{padding:6px 14px!important;font-size:13px!important}
+body[data-tour=wta] .chip[aria-pressed=true]{background:rgba(139,92,246,.12)!important;color:var(--accent)!important;border:1px solid rgba(139,92,246,.4)!important}
+body[data-tour=wta] .bar input,body[data-tour=wta] .bar select{padding:7px 14px!important}
+body[data-tour=wta] details.ev{box-shadow:none!important;border-radius:14px!important}
+body[data-tour=wta] table{border-spacing:0 5px!important}
+body[data-tour=wta] td{padding:9px 10px!important}
+body[data-tour=wta] tbody td{box-shadow:none!important;border-top:1px solid var(--line)!important;border-bottom:1px solid var(--line)!important}
+body[data-tour=wta] tbody td:first-child{border-left:1px solid var(--line)!important;border-radius:12px 0 0 12px!important}
+body[data-tour=wta] tbody td:last-child{border-right:1px solid var(--line)!important;border-radius:0 12px 12px 0!important}
+body[data-tour=wta] .rb{width:26px!important;height:26px!important;line-height:26px!important;font-size:13px!important;font-weight:600!important;background:var(--head)!important}
+body[data-tour=wta] tr.t1 .rb{background:#fde7b0!important;color:#8a5a00!important}
+body[data-tour=wta] tr.t2 .rb{background:#e6e3ee!important;color:#5d5670!important}
+body[data-tour=wta] tr.t3 .rb{background:#f8d9c2!important;color:#8a4a22!important}
+body[data-tour=wta] .nm{font-weight:600!important}
+body[data-tour=wta] td.lp b{font-size:15px!important;font-weight:600!important}
+body[data-tour=wta] .fl{width:20px!important;height:20px!important;vertical-align:-5px!important}
+body[data-tour=wta] td.det{border-radius:12px!important}
+</style>
+</head>
+<body data-tour="atp">
+<header><div class="wrap">
+  <div class="top">
+    <div class="brand"><i></i><span id="brand">ATP Live</span></div>
+    <div class="seg"><button data-tour="atp" aria-pressed="true">ATP</button><button data-tour="wta" aria-pressed="false">WTA</button></div>
+    <div class="status"><span class="pill" id="wkpill"></span><span class="pill" id="livepill">–</span><span id="upd"></span></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div id="err"></div>
+  <div id="listview">
+  <section class="hero" id="hero"></section>
+  <div id="evbox"></div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search player ( / )" aria-label="Search player">
+    <select id="n" aria-label="Rows"><option value="25">Top 25</option><option value="50">Top 50</option><option value="100" selected>Top 100</option><option value="150">Top 150</option></select>
+    <button class="chip" data-f="all" aria-pressed="true">All</button>
+    <button class="chip" data-f="draw" aria-pressed="false">Playing this week</button>
+    <button class="chip" data-f="live" aria-pressed="false">Live now</button>
+    <button class="chip" data-f="movers" aria-pressed="false">Movers</button>
+    <button class="chip" data-f="watch" aria-pressed="false">★ Watchlist</button>
+  </div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Live</th><th>Move</th><th></th><th>Player</th><th class="hm n">Age</th>
+      <th class="n hm">Official</th><th class="n hm">Defending</th><th class="n hm">Earned</th><th class="n">Live pts</th><th class="n">+/-</th><th>This week</th>
+    </tr></thead>
+    <tbody id="rows"><tr><td colspan="11" class="load" id="loadmsg">Loading rankings…</td></tr></tbody>
+  </table></div>
+  <p class="note" id="note"></p>
+  </div>
+  <div id="pview" hidden></div>
+</main>
+<footer>
+  Live points = official points − points from last year's edition of each tournament being played + points secured at this year's edition
+  (a player who has reached a round keeps at least that round's points even if the match is still in progress).
+  Tournament levels come from Wikipedia's season calendars (CC BY-SA); where a tournament can't be matched, its level is guessed and flagged. Players level on live points share a rank (shown as T41) because the tours' tiebreak, tournaments played, isn't in the free data. Singles only. Qualifying points and some early-round points are approximate. Data: unofficial public ESPN feeds for ATP/WTA rankings and scores, which can lag or change without notice.
+  Not affiliated with the ATP or WTA.
+</footer>
+
+<script src="engine.js?v=6"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Math.round(n).toLocaleString("en-US");
+const S={view:{type:"list"},pc:{},range:"3y",tour:"atp",n:100,q:"",f:"all",open:new Set(),watch:new Set(),T:{atp:null,wta:null},prev:{},upd:{},err:{}};
+try{S.watch=new Set(JSON.parse(localStorage.getItem("watch2")||"[]"))}catch(e){}
+const saveWatch=()=>{try{localStorage.setItem("watch2",JSON.stringify([...S.watch]))}catch(e){}};
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+/* ---------- per-tour state ---------- */
+function newState(tour){return{tour,rk:null,ath:{},events:{},cfg:{},cal:[],progress:"Loading rankings…",ready:false}}
+function ensureCfg(T,e){
+  const tour=T.tour,over=lsGet(`ov2:${tour}:${e.id}`)||{},wk=T.rk.week;
+  let g=Engine.guessLevel(tour,e);
+  if(g.level!=="slam"){const c=Engine.levelFromCalendar(T.cal,e);if(c)g={level:c.level,sure:true,draw:c.draw}}
+  const level=over.level??g.level;
+  const auto=Engine.inferCounted(tour,e,level,T.rk);
+  const counted=e.complete?(over.countedWk===wk&&over.counted!==undefined?over.counted:auto):false;
+  T.cfg[e.id]={level,counted,auto,sure:g.sure,draw:g.draw||null,levelOver:over.level!==undefined,countedOver:over.countedWk===wk&&over.counted!==undefined};
+}
+async function loadTour(tour){
+  const T=S.T[tour]=newState(tour);
+  try{
+    T.rk=await Engine.fetchRankings(tour);
+    const prog=(d,n)=>{T.progress=`Loading player details ${d}/${n}…`;if(S.tour===tour)$("#loadmsg")&&($("#loadmsg").textContent=T.progress)};
+    T.ath=await Engine.fetchAthletes(T.rk.list.map(r=>r.id),localStorage,prog);
+    T.progress="Loading this week's tournaments…";if(S.tour===tour&&$("#loadmsg"))$("#loadmsg").textContent=T.progress;
+    const evs=await Engine.fetchEvents(tour);
+    for(const y of[...new Set(evs.map(e=>e.year))])T.cal=T.cal.concat(await Engine.fetchCalendar(tour,y,localStorage));
+    await Engine.fetchLastYear(tour,evs,localStorage);
+    evs.forEach(e=>T.events[e.id]=e);
+    evs.forEach(e=>ensureCfg(T,e));
+    T.ready=true;S.upd[tour]=Date.now();delete S.err[tour];
+  }catch(e){S.err[tour]="Couldn't load data ("+(e.message||e)+"). Check your connection; retrying automatically.";}
+  render();
+}
+async function poll(tour){
+  const T=S.T[tour];if(!T||!T.ready)return;
+  try{
+    const evs=await Engine.fetchToday(tour);
+    evs.forEach(e=>{const old=T.events[e.id];if(old&&old._ly!==undefined)e._ly=old._ly;T.events[e.id]=e});
+    const fetchLY=evs.filter(e=>e._ly===undefined);
+    if(fetchLY.length)await Engine.fetchLastYear(tour,fetchLY,localStorage);
+    evs.forEach(e=>ensureCfg(T,e));
+    S.upd[tour]=Date.now();delete S.err[tour];
+  }catch(e){S.err[tour]="Live update failed ("+(e.message||e)+"). Showing the last data received."}
+  render();
+}
+async function refreshRankings(tour){
+  const T=S.T[tour];if(!T||!T.ready)return;
+  try{const rk=await Engine.fetchRankings(tour);if(rk.week!==T.rk.week||rk.updated!==T.rk.updated){
+    const ids=rk.list.map(r=>r.id).filter(id=>!T.ath[id]);Object.assign(T.ath,await Engine.fetchAthletes(ids,localStorage));
+    T.rk=rk;const evs=await Engine.fetchEvents(tour);await Engine.fetchLastYear(tour,evs,localStorage);T.events={};evs.forEach(e=>T.events[e.id]=e);evs.forEach(e=>ensureCfg(T,e));render()}}catch(e){}
+}
+
+/* ---------- rendering ---------- */
+const mvHtml=m=>m>0?`<span class="mv up">▲ ${m}</span>`:m<0?`<span class="mv dn">▼ ${-m}</span>`:`<span class="mv zero">–</span>`;
+const diffHtml=d=>d>0?`<span class="pd">+${fmt(d)}</span>`:d<0?`<span class="pn">−${fmt(-d)}</span>`:`<span class="zero">0</span>`;
+const score=m=>{const a=m.sets,b=m.oppSets;return a.map((v,i)=>`${v}-${b[i]??0}`).join(" ")};
+const shortRound=r=>({Quarterfinal:"QF",Semifinal:"SF",Final:"F"}[r]||String(r).replace(/^Round /,"R"));
+const surname=n=>{const p=String(n||"").trim().split(/\s+/);return p.length>1?p.slice(1).join(" "):p[0]||""};
+const fmtStart=(iso,timed=true)=>{
+  // ESPN gives a placeholder date with no real time for matches not yet scheduled; say so instead of guessing a day
+  if(!iso||!timed)return"Time TBD";const d=new Date(iso);if(isNaN(d))return"Time TBD";const n=new Date();
+  const hm=d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZoneName:"short"});
+  const day=d.toDateString()===n.toDateString()?"Today":d.toDateString()===new Date(n.getTime()+864e5).toDateString()?"Tomorrow":d.toLocaleDateString([],{weekday:"short"});
+  return`${day} ${hm}`;
+};
+function statusHtml(r){
+  const b=r.best;if(!b)return`<span class="st">—</span>`;
+  const m=b.m,rd=shortRound(m.round),opp=m.opp?surname(m.opp):null;
+  switch(b.st){
+    case"live":return`<span class="lv">${esc(rd)}</span> v ${esc(opp||"?")} <b>${score(m)}</b>`;
+    case"next":return`<span class="st">${esc(rd)} ${opp?"v "+esc(opp):"· opp TBD"}${m.start?` · ${esc(fmtStart(m.start,m.timed))}`:""}</span>`;
+    case"adv":return`<span class="st">Won ${esc(rd)} · next TBD</span>`;
+    case"champ":return`<b class="up">Champion 🏆</b>`;
+    default:return`<span class="st">Out in ${esc(rd)}</span>`;
+  }
+}
+function detail(T,d,r){
+  const p=r.p,a=T.ath[p.id]||{},tour=T.tour,bits=[];
+  bits.push(`<div><h4>Live points</h4>${fmt(p.points)} official − ${fmt(r.def)} defending + ${fmt(r.earned)} earned = <b>${fmt(r.live)}</b>${r.defKnown?"":' <span class="warn">(last year\'s results unavailable for some events)</span>'}</div>`);
+  const ir=Engine.ifResults(tour,r);
+  if(ir){const rw=d.projRank(r,ir.win),rl=d.projRank(r,ir.lose),ln=(a.name||"").split(" ").slice(-1)[0];
+    bits.push(`<div><h4>If ${esc(ln)} wins this match</h4>${fmt(ir.win)} pts → live rank <b>#${rw}</b> ${mvHtml(p.rank-rw)}</div>`);
+    bits.push(`<div><h4>If they lose</h4>${fmt(ir.lose)} pts → live rank <b>#${rl}</b> ${mvHtml(p.rank-rl)}</div>`);
+  }
+  const ex=[];
+  if(r.best)ex.push(`${esc(r.best.e.name)} (${Engine.table(tour,r.best.lvl).label})`);
+  bits.push(`<div><h4>Details</h4>Official rank #${p.rank}${p.prev!==p.rank?` (was #${p.prev})`:""}${a.age?` · age ${a.age}`:""}${a.hand?` · ${esc(a.hand)}`:""}${ex.length?`<br>${ex.join("")}`:""}</div>`);
+  return`<div class="dg">${bits.join("")}</div>`;
+}
+function evPanel(T){
+  const evs=Object.values(T.events).sort((a,b)=>(a.complete-b.complete)||b.live-a.live||a.start.localeCompare(b.start));
+  if(!evs.length)return"";
+  const active=evs.filter(e=>!T.cfg[e.id].counted);
+  const opt=e=>{const c=T.cfg[e.id],L=Engine.LEVELS[T.tour];
+    return`<select data-lvl="${e.id}">${Object.entries(L).map(([k,v])=>`<option value="${k}" ${String(c.level)===k?"selected":""}>${v.label}</option>`).join("")}</select>${c.sure||c.levelOver?"":' <span class="warn" title="Not found in the Wikipedia calendar, so its level is guessed. Change it if wrong.">⚠ guessed</span>'}`};
+  const row=e=>{const c=T.cfg[e.id];
+    const state=e.live?`<span class="lv">in progress</span>`:e.complete?"final played":"not started";
+    const chk=e.complete?`<label class="t"><input type="checkbox" data-cnt="${e.id}" ${c.counted?"checked":""}> already in official rankings${c.countedOver?"":" (auto)"}</label>`:`<span class="t">adds/drops points live</span>`;
+    return`<div class="evr"><div><b>${esc(e.name)}</b></div><div>${opt(e)}</div><div class="t">${state}</div><div>${chk}</div></div>`};
+  const live=evs.filter(e=>e.live).length;
+  return`<details class="ev"><summary><div>Tournaments in the live table: ${active.map(e=>esc(e.name)).slice(0,3).join(", ")||"none"}${active.length>3?` +${active.length-3} more`:""}</div><span>${active.length} counted live · ${evs.length-active.length} already in official · tap to adjust</span></summary>
+  <div class="evl">${evs.map(row).join("")}<div class="note">Levels set each event's points table. Events whose final is already played are checked against last week's ranking change to see if the official ranking has absorbed them; flip the checkbox if that guess is wrong.</div></div></details>`;
+}
+function setTheme(){document.body.dataset.tour=S.tour;$("#brand").textContent=S.tour==="atp"?"ATP Live":"WTA Live"}
+// Players from Russia and Belarus compete as neutral athletes, so their flags are not shown.
+const HIDE_FLAG=/^(russia|belarus)$/i,HIDE_FLAG_URL=/\/(rus|blr)\.png/i;
+const showFlag=a=>!!a.flag&&!HIDE_FLAG.test(a.country||"")&&!HIDE_FLAG_URL.test(a.flag);
+const lastName=n=>(n||"").split(" ").slice(1).join(" ")||n||"";
+const shortName=n=>{const p=(n||"").split(" ");return p.length>1?p[0][0]+". "+p.slice(1).join(" "):n||""};
+function frozenNote(T,d){
+  const e=d.applied.find(x=>!x.complete&&T.cfg[x.id].level===1000&&(T.cfg[x.id].draw||0)>=96);
+  return e?`<div class="hnote">Official rankings are still ${esc(T.rk.headline.replace(/^\d{4} (ATP|WTA): /,""))}: new rankings aren't published between the two weeks of a two-week event like ${esc(e.name)}.</div>`:"";
+}
+function heroHtml(T,d,liveN){
+  const name=id=>(T.ath[id]||{}).name||"";
+  const risers=[...d.rows].filter(r=>r.move>0).sort((a,b)=>b.move-a.move||b.diff-a.diff).slice(0,4);
+  const fallers=[...d.rows].filter(r=>r.move<0).sort((a,b)=>a.move-b.move||a.diff-b.diff).slice(0,4);
+  const chip=(r,cls)=>`<a class="mchip" href="#/player/${S.tour}/${r.p.id}">${esc(shortName(name(r.p.id)))}<b class="${cls}">${r.move>0?"▲":"▼"} ${Math.abs(r.move)}</b></a>`;
+  const moving=d.rows.filter(r=>r.move!==0).length;
+  const t=S.tour==="atp"?"ATP":"WTA";
+  return`<div class="eyebrow">${t} TOUR · SINGLES · ${esc(T.rk.headline.replace(/^\d{4} (ATP|WTA): /,""))}</div>
+  <h1>${S.tour==="atp"?"Live <em>Rankings</em>":"Live <em>Rankings</em>"}</h1>
+  <div class="hsub">Official points, adjusted in real time for tournaments in progress.</div>
+  ${frozenNote(T,d)}
+  <div class="ribbon">
+    <div class="rstat"><b>${liveN}</b><span>${liveN===1?"match":"matches"} live</span></div>
+    <div class="rstat"><b>${moving}</b><span>players moving</span></div>
+    <div class="rstat"><b>${d.applied.length}</b><span>${d.applied.length===1?"event":"events"} counted</span></div>
+  </div>
+  <div class="movers"><div class="mcol"><h4>▲ Biggest risers</h4><div class="mchips">${risers.map(r=>chip(r,"up")).join("")||'<span class="st">none yet</span>'}</div></div>
+  <div class="mcol"><h4>▼ Biggest fallers</h4><div class="mchips">${fallers.map(r=>chip(r,"dn")).join("")||'<span class="st">none yet</span>'}</div></div></div>`;
+}
+function updatePills(T,d){
+  const liveN=Math.round(d.rows.filter(r=>r.best&&r.best.st==="live").length/2);
+  const times=d.rows.filter(r=>r.best&&r.best.st==="next"&&r.best.m.start&&r.best.m.timed).map(r=>+new Date(r.best.m.start)).filter(t=>t>Date.now()-36e5);
+  const lp=$("#livepill");lp.textContent=liveN>=1?`${liveN} MATCH${liveN===1?"":"ES"} LIVE`:times.length?`NEXT MATCH · ${fmtStart(new Date(Math.min(...times)).toISOString()).toUpperCase()}`:"NO MATCHES LIVE";lp.classList.toggle("live",liveN>=1);
+  $("#wkpill").textContent=T.rk.headline;
+  return liveN;
+}
+function render(){
+  const T=S.T[S.tour];
+  $("#err").innerHTML=S.err[S.tour]?`<div class="err">${esc(S.err[S.tour])}</div>`:"";
+  setTheme();
+  const isP=S.view.type==="player";
+  $("#listview").hidden=isP;$("#pview").hidden=!isP;
+  if(isP&&(!T||!T.ready)){$("#pview").innerHTML=`<div class="load">Loading player…</div>`;return}
+  if(!T||!T.ready){$("#hero").innerHTML=`<div class="eyebrow">${S.tour.toUpperCase()} TOUR · SINGLES</div><h1>Live <em>Rankings</em></h1><div class="hsub">Loading the latest rankings…</div>`;$("#rows").innerHTML=`<tr><td colspan="11" class="load" id="loadmsg">${esc(T?T.progress:"Loading…")}</td></tr>`;$("#evbox").innerHTML="";return}
+  const d=T.d=Engine.computeLive(S.tour,T.rk,Object.values(T.events),T.cfg);
+  const liveN=updatePills(T,d);
+  if(isP){renderPlayer(T,d);return}
+  document.title="Live Rankings – ATP & WTA Singles";
+  const prev=S.prev[S.tour]||{},q=S.q.trim().toLowerCase();
+  const nameOf=id=>(T.ath[id]||{}).name||"";
+  let rows=d.rows.filter(r=>r.rank<=S.n);
+  if(S.f==="draw")rows=rows.filter(r=>r.best);
+  if(S.f==="live")rows=rows.filter(r=>r.best&&r.best.st==="live");
+  if(S.f==="movers")rows=rows.filter(r=>r.move!==0||r.diff!==0);
+  if(S.f==="watch")rows=d.rows.filter(r=>S.watch.has(r.p.id));
+  if(q)rows=rows.filter(r=>nameOf(r.p.id).toLowerCase().includes(q));
+  const body=rows.map(r=>{
+    const a=T.ath[r.p.id]||{},old=prev[r.p.id],fl=old&&old!==r.rank?(r.rank<old?"fup":"fdn"):"",op=S.open.has(r.p.id);
+    return`<tr class="r ${fl} ${op?"open":""} ${r.move>0?"mu":r.move<0?"md":""} ${r.rank<=3?"t"+r.rank:""}" data-id="${r.p.id}">
+      <td class="rk"><span class="rb${r.tied?" tie":""}" ${r.tied?'title="Level on points with another player; the tours break ties by tournaments played, which this free data doesn\'t include"':""}>${r.tied?"T":""}${r.rank}</span></td><td>${mvHtml(r.move)}</td>
+      <td><button class="star ${S.watch.has(r.p.id)?"on":""}" data-star="${r.p.id}" aria-label="Watch">${S.watch.has(r.p.id)?"★":"☆"}</button></td>
+      <td>${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:""}<a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span></td>
+      <td class="hm n">${a.age??""}</td><td class="n hm">${fmt(r.p.points)}</td>
+      <td class="n hm">${r.def?"−"+fmt(r.def):"–"}</td><td class="n hm">${r.earned?"+"+fmt(r.earned):"–"}</td>
+      <td class="n lp"><b>${fmt(r.live)}</b></td><td class="n">${diffHtml(r.diff)}</td><td class="wk">${statusHtml(r)}</td></tr>`
+      +(op?`<tr><td class="det" colspan="11">${detail(T,d,r)}</td></tr>`:"");
+  }).join("");
+  $("#rows").innerHTML=body||`<tr><td colspan="11" class="empty">${S.f==="watch"?"No players on your watchlist yet. Tap ☆ next to a player.":"No players match."}</td></tr>`;
+  S.prev[S.tour]={};d.rows.forEach(r=>S.prev[S.tour][r.p.id]=r.rank);
+  // keep the open <details> state while re-rendering
+  const was=document.querySelector("details.ev"),wasOpen=was&&was.open;
+  $("#evbox").innerHTML=evPanel(T);if(wasOpen)document.querySelector("details.ev").open=true;
+  $("#hero").innerHTML=heroHtml(T,d,liveN);
+  $("#note").textContent=`Official rankings: ${T.rk.headline}, in effect since Monday ${new Date(T.rk.effective+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})}. Top 150 only.`;
+}
+
+/* ---------- player pages ---------- */
+const DEPTH_LBL={1:"final",2:"semifinal",3:"quarterfinal",4:"round of 16",5:"round of 32",6:"round of 64",7:"first round"};
+function lyLabel(code){
+  if(!code)return"Did not play";
+  const[d,first,won]=code;
+  if(won&&d===1)return"Won the title";
+  if(first)return"Lost first round";
+  return`Lost ${DEPTH_LBL[d]||"early"}`;
+}
+function thisYearText(m){
+  if(!m)return'<span class="st">Not in the draw</span>';
+  const rd=shortRound(m.round),opp=m.opp?surname(m.opp):null;
+  if(m.state==="in")return`<span class="lv">${esc(rd)} live</span> v ${esc(opp||"?")} <b>${score(m)}</b>`;
+  if(m.state==="pre")return`${esc(rd)} ${opp?"v "+esc(opp):"· opponent TBD"} <span class="st">· ${esc(fmtStart(m.start,m.timed))}</span>`;
+  if(m.won)return m.d===1?'<b class="up">Won the title 🏆</b>':`Won ${esc(rd)} <span class="st">· next round TBD</span>`;
+  return`Lost ${esc(rd)}${opp?" to "+esc(opp):""} <span class="st">${score(m)?"· "+score(m):""}</span>`;
+}
+function chartSvg(weeks){
+  const DAY=864e5,tm=d=>Date.parse(d+"T12:00:00");
+  if(!weeks.length)return'<div class="st">No history in this range.</div>';
+  const last=weeks[weeks.length-1],t0=tm(weeks[0].d),t1=tm(last.d)+last.n*7*DAY;
+  if(t1-t0<8*DAY)return'<div class="st">Not enough history in this range.</div>';
+  const W=680,H=210,L=40,R=12,Tp=12,B=26;
+  const hi=Math.max(10,Math.ceil(Math.max(...weeks.map(w=>w.rank))/10)*10),lo=1;
+  const x=t=>L+(W-L-R)*((t-t0)/(t1-t0)),y=r=>Tp+(H-Tp-B)*((r-lo)/(hi-lo));
+  // a ranking stays in force until the next one is published, so draw it as a flat step
+  let path="",prevEnd=null,hit="";
+  weeks.forEach(w=>{
+    const xs=x(tm(w.d)),xe=x(tm(w.d)+w.n*7*DAY),yy=y(w.rank).toFixed(1);
+    path+=prevEnd!==null&&Math.abs(xs-prevEnd)<.6?`V${yy}H${xe.toFixed(1)}`:`M${xs.toFixed(1)},${yy}H${xe.toFixed(1)}`;
+    prevEnd=xe;
+    hit+=`<rect x="${xs.toFixed(1)}" y="${Tp}" width="${Math.max(1.5,xe-xs).toFixed(1)}" height="${H-Tp-B}" fill="transparent"><title>Week of ${esc(w.d)}: #${w.rank} · ${fmt(w.pts)} pts${w.n>1?` · in force ${w.n} weeks`:""}</title></rect>`;
+  });
+  const ticks=[...new Set([lo,Math.round(lo+(hi-lo)/3),Math.round(lo+2*(hi-lo)/3),hi])];
+  const grid=ticks.map(t=>`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" class="cg"/><text x="${L-6}" y="${y(t)+4}" class="ct" text-anchor="end">${t}</text>`).join("");
+  let xl="",firstTick=null;const y0=new Date(t0).getUTCFullYear(),y1=new Date(t1).getUTCFullYear();
+  for(let yr=y0;yr<=y1;yr++){const tt=Date.parse(yr+"-01-01");if(tt>t0&&tt<t1&&x(tt)-L>24){if(firstTick===null)firstTick=x(tt);xl+=`<line x1="${x(tt)}" x2="${x(tt)}" y1="${Tp}" y2="${H-B}" class="cg"/><text x="${x(tt)}" y="${H-8}" class="ct" text-anchor="middle">${yr}</text>`}}
+  if(firstTick===null||firstTick-L>70)xl+=`<text x="${L}" y="${H-8}" class="ct" text-anchor="start">${new Date(t0).toLocaleDateString(undefined,{month:"short",year:"numeric",timeZone:"UTC"})}</text>`;
+  return`<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Official ranking by week">${grid}${xl}<path d="${path}" class="cl"/><circle cx="${x(t1).toFixed(1)}" cy="${y(last.rank).toFixed(1)}" r="4" class="cd"/>${hit}</svg>`;
+}
+function historyHtml(h){
+  if(h===undefined)return'<div class="st">Loading history…</div>';
+  if(h===null)return`<div class="st">Ranking history isn't available right now.</div>`;
+  if(!h.length)return'<div class="st">No archived weeks for this player yet (the archive covers the top 150).</div>';
+  // Weeks are calendar weeks: a ranking stays in force until the next one is published
+  // (neither tour publishes during two-week events), so each entry counts for w.n weeks.
+  const wk=f=>h.filter(f).reduce((a,w)=>a+w.n,0);
+  const best=h.reduce((a,b)=>b.rank<a.rank?b:a),atBest=wk(w=>w.rank===best.rank),top10=wk(w=>w.rank<=10),no1=wk(w=>w.rank===1),all=wk(()=>true);
+  const bestPts=h.reduce((a,b)=>b.pts>a.pts?b:a);
+  const yrs={"1y":1,"3y":3,"all":null}[S.range],cut=yrs?new Date(Date.now()-yrs*365.25*864e5).toISOString().slice(0,10):"";
+  const view=h.filter(w=>!cut||w.d>=cut);
+  const fd=d=>d?new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
+  return`<div class="pstats">
+    <div class="pstat"><b>#${best.rank}</b><span>Career high · from ${esc(fd(best.d))}${atBest>1?` · ${atBest} weeks`:""}</span></div>
+    <div class="pstat"><b>${top10}</b><span>Weeks in top 10</span></div>
+    <div class="pstat"><b>${no1}</b><span>Weeks at #1</span></div>
+    <div class="pstat"><b>${fmt(bestPts.pts)}</b><span>Most points · ranking of ${esc(fd(bestPts.d))}</span></div>
+    <div class="pstat"><b>${all}</b><span>Weeks in the top 150 · since ${esc(fd(h[0].d))}</span></div></div>
+  <div class="tabs2">${[["1y","1 year"],["3y","3 years"],["all","All"]].map(([k,l])=>`<button class="chip" data-range="${k}" aria-pressed="${S.range===k}">${l}</button>`).join("")}</div>
+  ${chartSvg(view)}
+  <div class="note">Official ranking by week, lower is better. Dates are the Monday each ranking took effect. Weeks are counted as the tours count them: a ranking stays in force until the next is published (so a two-week event counts as two weeks). Weeks outside the top 150 aren't recorded.</div>`;
+}
+function playerHtml(T,d,row){
+  const p=row.p,a=T.ath[p.id]||{},det=(S.pc[S.tour+p.id]||{}).detail||{},tour=S.tour;
+  const flag=showFlag(a)?`<img class="fl big" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:"";
+  const ht=det.heightIn?`${Math.round(det.heightIn*2.54)} cm`:"";
+  const bio=[a.country&&!HIDE_FLAG.test(a.country)?esc(a.country):"",a.age?`age ${a.age}`:"",a.hand?esc(a.hand):"",ht,det.birthPlace?"born in "+esc(det.birthPlace):"",det.debutYear?"pro since "+det.debutYear:""].filter(Boolean).join(" · ");
+  // per-event breakdown
+  const evs=d.applied.map(e=>({e,lvl:T.cfg[e.id].level,m:e.per[p.id],ly:e._ly&&e._ly[p.id]})).filter(x=>x.m||x.ly);
+  const lines=evs.map(({e,lvl,m,ly})=>{
+    const lyP=Engine.lyPoints(tour,lvl,ly),nowP=m?Engine.pointsFor(tour,lvl,m):0;
+    return`<tr><td><b>${esc(e.name)}</b> <span class="cc">${esc(Engine.table(tour,lvl).label)}</span></td>
+      <td>${esc(lyLabel(ly))}</td><td class="n">${lyP?"−"+fmt(lyP):"–"}</td><td>${thisYearText(m)}</td><td class="n">${nowP?"+"+fmt(nowP):"–"}</td></tr>`}).join("");
+  const counted=Object.values(T.events).filter(e=>T.cfg[e.id].counted).length;
+  const ir=Engine.ifResults(tour,row);
+  const what=ir?(()=>{const rw=d.projRank(row,ir.win),rl=d.projRank(row,ir.lose);return`<div class="pstats">
+    <div class="pstat"><b>#${rw}</b><span>Live rank if they win · ${fmt(ir.win)} pts ${mvHtml(p.rank-rw)}</span></div>
+    <div class="pstat"><b>#${rl}</b><span>Live rank if they lose · ${fmt(ir.lose)} pts ${mvHtml(p.rank-rl)}</span></div></div>`})():"";
+  const hist=(S.pc[S.tour+p.id]||{}).hist;
+  return`<a class="back" href="#${tour}">← ${tour.toUpperCase()} live rankings</a>
+  <div class="ph"><div><div class="eyebrow">${tour.toUpperCase()} TOUR · SINGLES</div>
+    <h1>${flag}${esc(a.name||"Player")}</h1><div class="hsub">${bio}</div></div>
+    <div class="phr">
+      <div class="pstat big"><b>${row.tied?"T":""}${row.rank}</b><span>Live rank ${mvHtml(row.move)}</span></div>
+      <div class="pstat big"><b>${fmt(row.live)}</b><span>Live points ${diffHtml(row.diff)}</span></div>
+      <div class="pstat big"><b>#${p.rank}</b><span>Official · ${fmt(p.points)} pts</span></div></div></div>
+  <h2>How the live points add up</h2>
+  <p class="eqn">${fmt(p.points)} official − ${fmt(row.def)} defending + ${fmt(row.earned)} earned = <b>${fmt(row.live)}</b></p>
+  ${lines?`<div class="tw"><table><thead><tr><th>Tournament</th><th>Last year</th><th class="n">Dropping</th><th>This year</th><th class="n">Earned</th></tr></thead><tbody>${lines}</tbody></table></div>`:'<div class="st">No tournaments in progress affect this player.</div>'}
+  <div class="note">${counted?`${counted} other recent tournament${counted===1?" is":"s are"} already in the official ranking, so they change nothing here. `:""}Points for a round are credited as soon as a player reaches it.</div>
+  ${what}
+  <h2>Ranking history</h2>${historyHtml(hist)}`;
+}
+function renderPlayer(T,d){
+  const id=S.view.id,row=d.rows.find(r=>r.p.id===id),pv=$("#pview");
+  if(!row){pv.innerHTML=`<a class="back" href="#${S.tour}">← ${S.tour.toUpperCase()} live rankings</a><div class="empty">Player not found. This site tracks the official top 150 only.</div>`;return}
+  const key=S.tour+id;
+  if(!S.pc[key]){
+    S.pc[key]={};
+    Engine.fetchAthleteDetail(id).then(x=>{S.pc[key].detail=x;if(S.view.id===id)render()}).catch(()=>{S.pc[key].detail={}});
+    const getJ=u=>fetch(u).then(r=>r.ok?r.json():Promise.reject());
+    // local server API first; on static hosting (GitHub Pages) fall back to the prebuilt per-player file
+    getJ(`api/history?tour=${S.tour}&id=${id}`).catch(()=>getJ(`data/history/${S.tour}/${id}.json`)).then(j=>{S.pc[key].hist=j.weeks}).catch(()=>{S.pc[key].hist=null}).finally(()=>{if(S.view.id===id)render()});
+  }
+  pv.innerHTML=playerHtml(T,d,row);
+  document.title=`${(T.ath[id]||{}).name||"Player"} – Live Rankings`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const tb=e.target.closest("button[data-tour]");if(tb){location.hash=tb.dataset.tour;parseHash();render();return}
+  const rg=e.target.closest("[data-range]");if(rg){S.range=rg.dataset.range;render();return}
+  if(e.target.closest("a"))return;
+  const f=e.target.closest("[data-f]");if(f){S.f=f.dataset.f;document.querySelectorAll("[data-f]").forEach(b=>b.setAttribute("aria-pressed",b===f));render();return}
+  const st=e.target.closest("[data-star]");if(st){const id=st.dataset.star;S.watch.has(id)?S.watch.delete(id):S.watch.add(id);saveWatch();render();return}
+  if(e.target.closest("details.ev"))return;
+  const tr=e.target.closest("tr.r");if(tr){const id=tr.dataset.id;S.open.has(id)?S.open.delete(id):S.open.add(id);render()}
+});
+document.addEventListener("change",e=>{
+  const T=S.T[S.tour];
+  if(e.target.dataset.lvl){const id=e.target.dataset.lvl,k=`ov2:${S.tour}:${id}`,o=lsGet(k)||{};o.level=isNaN(+e.target.value)?e.target.value:+e.target.value;lsSet(k,o);ensureCfg(T,T.events[id]);render()}
+  if(e.target.dataset.cnt){const id=e.target.dataset.cnt,k=`ov2:${S.tour}:${id}`,o=lsGet(k)||{};o.counted=e.target.checked;o.countedWk=T.rk.week;lsSet(k,o);ensureCfg(T,T.events[id]);render()}
+});
+$("#q").addEventListener("input",e=>{S.q=e.target.value;render()});
+$("#n").addEventListener("change",e=>{S.n=+e.target.value;render()});
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!/INPUT|SELECT/.test(document.activeElement.tagName)){e.preventDefault();$("#q").focus()}if(e.key==="Escape")$("#q").blur()});
+setInterval(()=>{const u=S.upd[S.tour];$("#upd").textContent=u?"Updated "+Math.max(0,Math.round((Date.now()-u)/1000))+"s ago":""},1000);
+function parseHash(){
+  const h=location.hash,m=/^#\/player\/(atp|wta)\/(\d+)/.exec(h);
+  if(m){S.view={type:"player",tour:m[1],id:m[2]};S.tour=m[1]}
+  else{S.view={type:"list"};if(h==="#wta")S.tour="wta";else if(h==="#atp")S.tour="atp"}
+  document.querySelectorAll("button[data-tour]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tour===S.tour));
+}
+parseHash();
+addEventListener("hashchange",()=>{parseHash();render();window.scrollTo(0,0)});
+
+/* ---------- start ---------- */
+const start=async()=>{
+  const other=S.tour==="atp"?"wta":"atp";
+  await Promise.all([loadTour(S.tour),loadTour(other)]);
+  // retry failed loads
+  setInterval(()=>{["atp","wta"].forEach(t=>{if(!S.T[t]||!S.T[t].ready)loadTour(t)})},20000);
+  setInterval(()=>{if(!document.hidden)["atp","wta"].forEach(poll)},30000);
+  setInterval(()=>{if(!document.hidden)["atp","wta"].forEach(refreshRankings)},15*60000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)["atp","wta"].forEach(poll)});
+};
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+name: Update rankings archive
+
+# Keeps the weekly rankings archive growing and refreshes the per-player history files.
+# GitHub Pages (Deploy from branch: main, folder: /) republishes whenever this commits.
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours; rankings are published weekly, this catches them soon after
+  workflow_dispatch: {}        # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch newest rankings and rebuild history files
+        run: |
+          python3 rankings_store.py backfill
+          python3 rankings_store.py latest
+          python3 rankings_store.py migrate
+          python3 build_static.py
+      - name: Commit changes
+        run: |
+          git config user.name "rankings-bot"
+          git config user.email "rankings-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Update rankings archive"
+          git push
+      - name: Keep the schedule alive
+        # GitHub pauses scheduled workflows in a repo with no commits for 60 days. New rankings
+        # normally commit weekly; this adds a heartbeat commit if nothing has been committed for 30 days.
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if [ $(( (now - last) / 86400 )) -ge 30 ]; then
+            git commit --allow-empty -m "Keep scheduled updates active"
+            git push
+          fi
