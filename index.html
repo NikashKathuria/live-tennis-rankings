@@ -215,6 +215,7 @@ body[data-tour=atp] .pstat,body[data-tour=atp] .chip{border-radius:6px}
 body[data-tour=wta] .pstat{border-radius:14px}
 body[data-tour=wta] #pview tbody td:first-child{border-radius:12px 0 0 12px}
 .fl.blank{display:inline-block;visibility:hidden}
+.plw{display:flex;align-items:center;gap:8px}.plw .fl{flex:none;margin:0!important}.plt{min-width:0}
 .mvs,.sub2{display:none}
 .star.big{font-size:22px;vertical-align:middle}
 @media(max-width:760px){
@@ -232,13 +233,16 @@ body[data-tour=wta] #pview tbody td:first-child{border-radius:12px 0 0 12px}
   .mvs{display:block;font-size:10px;font-weight:700;line-height:1.2;margin-top:2px}
   td.pl{white-space:normal;min-width:0}
   td.pl .cc{display:none}
-  .sub2{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3;padding-left:30px}
-  td.pl a.nm{font-size:14px!important}
+  .sub2{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3}
+  .plw .fl{margin-top:3px!important}
+  .plw{align-items:flex-start}
+  td.pl a.nm{font-size:14px!important;line-height:1.25}
   body[data-tour=wta] td.pl{max-width:none}
   th,td{padding:8px 6px!important}
   td.lp b{font-size:15px!important}
   .hero{padding-top:14px!important}
 }
+@media(max-width:380px){td.pl a.nm{font-size:13px!important}}
 /* ATP calmer */
 body[data-tour=atp]::before{background:radial-gradient(800px 380px at 90% -10%,rgba(34,211,238,.08),transparent 62%)!important}
 body[data-tour=atp]{--bg:#0a1020;--card:#0f1830;--rowbg:#0f1830;--line:#1c2a4a;--hl:#142241;--accent:#38bdf8;--accent2:#7dd3fc}
@@ -394,6 +398,12 @@ const diffHtml=d=>d>0?`<span class="pd">+${fmt(d)}</span>`:d<0?`<span class="pn"
 const score=m=>{const a=m.sets,b=m.oppSets;return a.map((v,i)=>`${v}-${b[i]??0}`).join(" ")};
 const shortRound=r=>({Quarterfinal:"QF",Semifinal:"SF",Final:"F"}[r]||String(r).replace(/^Round /,"R"));
 const surname=n=>{const p=String(n||"").trim().split(/\s+/);return p.length>1?p.slice(1).join(" "):p[0]||""};
+// compact form for the header pill on phones: no time zone, "Tmrw" for tomorrow
+const fmtStartShort=iso=>{
+  const d=new Date(iso),n=new Date(),hm=d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+  const day=d.toDateString()===n.toDateString()?"Today":d.toDateString()===new Date(n.getTime()+864e5).toDateString()?"Tmrw":d.toLocaleDateString([],{weekday:"short"});
+  return`${day} ${hm}`;
+};
 const fmtStart=(iso,timed=true)=>{
   // ESPN gives a placeholder date with no real time for matches not yet scheduled; say so instead of guessing a day
   if(!iso||!timed)return"Time TBD";const d=new Date(iso);if(isNaN(d))return"Time TBD";const n=new Date();
@@ -471,7 +481,7 @@ function heroHtml(T,d,liveN){
 function updatePills(T,d){
   const liveN=Math.round(d.rows.filter(r=>r.best&&r.best.st==="live").length/2);
   const times=d.rows.filter(r=>r.best&&r.best.st==="next"&&r.best.m.start&&r.best.m.timed).map(r=>+new Date(r.best.m.start)).filter(t=>t>Date.now()-36e5);
-  const lp=$("#livepill");lp.textContent=liveN>=1?`${liveN} MATCH${liveN===1?"":"ES"} LIVE`:times.length?`NEXT MATCH · ${fmtStart(new Date(Math.min(...times)).toISOString()).toUpperCase()}`:"NO MATCHES LIVE";lp.classList.toggle("live",liveN>=1);
+  const lp=$("#livepill");lp.textContent=liveN>=1?`${liveN} MATCH${liveN===1?"":"ES"} LIVE`:times.length?(matchMedia("(max-width:760px)").matches?`NEXT · ${fmtStartShort(new Date(Math.min(...times)).toISOString()).toUpperCase()}`:`NEXT MATCH · ${fmtStart(new Date(Math.min(...times)).toISOString()).toUpperCase()}`):"NO MATCHES LIVE";lp.classList.toggle("live",liveN>=1);
   $("#wkpill").textContent=T.rk.headline;
   return liveN;
 }
@@ -500,7 +510,7 @@ function render(){
     return`<tr class="r ${fl} ${op?"open":""} ${r.move>0?"mu":r.move<0?"md":""} ${r.rank<=3?"t"+r.rank:""}" data-id="${r.p.id}">
       <td class="rk"><span class="rb${r.tied?" tie":""}" ${r.tied?'title="Level on points with another player; the tours break ties by tournaments played, which this free data doesn\'t include"':""}>${r.tied?"T":""}${r.rank}</span><div class="mvs">${r.move?`<span class="${r.move>0?"up":"dn"}">${r.move>0?"▲":"▼"}${Math.abs(r.move)}</span>`:""}</div></td><td class="hp">${mvHtml(r.move)}</td>
       <td class="hp"><button class="star ${S.watch.has(r.p.id)?"on":""}" data-star="${r.p.id}" aria-label="Watch">${S.watch.has(r.p.id)?"★":"☆"}</button></td>
-      <td class="pl">${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:`<span class="fl blank"></span>`}<a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span>${r.best?`<div class="sub2">${statusHtml(r)}</div>`:""}</td>
+      <td class="pl"><div class="plw">${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:`<span class="fl blank"></span>`}<div class="plt"><a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span>${r.best?`<div class="sub2">${statusHtml(r)}</div>`:""}</div></div></td>
       <td class="hm n">${a.age??""}</td><td class="n hm">${fmt(r.p.points)}</td>
       <td class="n hm">${r.def?"−"+fmt(r.def):"–"}</td><td class="n hm">${r.earned?"+"+fmt(r.earned):"–"}</td>
       <td class="n lp"><b>${fmt(r.live)}</b></td><td class="n">${diffHtml(r.diff)}</td><td class="wk hp">${statusHtml(r)}</td></tr>`
