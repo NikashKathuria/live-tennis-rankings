@@ -22,12 +22,13 @@ jobs:
           python-version: "3.12"
       - name: Install Pillow (for flag images)
         run: pip install pillow
-      - name: Fetch newest rankings, rebuild history files, add any new flags
+      - name: Fetch newest rankings, rebuild history files, refresh player data and flags
         run: |
           python3 rankings_store.py backfill
           python3 rankings_store.py latest
           python3 rankings_store.py migrate
           python3 build_static.py
+          python3 build_athletes.py
           python3 build_flags.py
       - name: Commit changes
         run: |

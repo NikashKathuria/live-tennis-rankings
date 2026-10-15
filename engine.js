@@ -123,25 +123,48 @@ const Engine=(()=>{
     }
     return{week,effective,headline:cur.headline,updated:cur.lastUpdated,map:mapOf(cur),list:cur.ranks.map(x=>({id:idOf(x.athlete.$ref),rank:x.current,prev:x.previous,points:x.points})),prevMap};
   }
+  /* Player details come from a bundle in the repo (data/athletes.json, refreshed by the scheduled job)
+     and only fall back to ESPN for anyone not in it yet. Age is always worked out from the birth date. */
+  const FLAG=code=>`https://a.espncdn.com/i/teamlogos/countries/500/${code}.png`;
+  const ageFrom=dob=>{
+    if(!dob)return undefined;const d=new Date(dob),n=new Date();if(isNaN(d))return undefined;
+    let a=n.getUTCFullYear()-d.getUTCFullYear();
+    if(n.getUTCMonth()<d.getUTCMonth()||(n.getUTCMonth()===d.getUTCMonth()&&n.getUTCDate()<d.getUTCDate()))a--;
+    return a;
+  };
+  let _bundle=null;
+  async function loadBundle(){
+    if(_bundle)return _bundle;
+    try{_bundle=await getJSON("data/athletes.json?"+Math.floor(Date.now()/36e5),1)}catch(e){_bundle={}}
+    return _bundle;
+  }
+  const fromBundle=(id,b)=>{const x=b[id];if(!x)return null;
+    return{id,name:x.n,age:ageFrom(x.b),dob:x.b,flag:x.f?FLAG(x.f):undefined,country:x.c,hand:x.h,heightIn:x.ht,debutYear:x.d,birthPlace:x.p}};
+  function fromEspn(id,a){
+    const bp=a.birthPlace||{},dob=(a.dateOfBirth||"").slice(0,10);
+    return{id,name:a.displayName||a.fullName,dob,age:ageFrom(dob)??a.age,flag:a.flag&&a.flag.href,country:a.flag&&a.flag.alt,
+      hand:a.hand&&a.hand.displayValue,heightIn:a.height,debutYear:a.debutYear,birthPlace:[bp.city,bp.country].filter(Boolean).join(", ")};
+  }
   async function fetchAthlete(id,cache){
-    const k="ath1:"+id;
-    try{const c=JSON.parse(cache.getItem(k)||"null");if(c&&Date.now()-c.t<30*864e5)return c.v}catch(e){}
-    const a=await getJSON(`https://sports.core.api.espn.com/v2/sports/tennis/athletes/${id}?lang=en&region=us`,2);
-    const v={id,name:a.displayName||a.fullName,age:a.age,flag:a.flag&&a.flag.href,country:a.flag&&a.flag.alt,hand:a.hand&&a.hand.displayValue};
+    const k="ath2:"+id;
+    try{const c=JSON.parse(cache.getItem(k)||"null");if(c&&Date.now()-c.t<30*864e5)return{...c.v,age:ageFrom(c.v.dob)??c.v.age}}catch(e){}
+    const v=fromEspn(id,await getJSON(`https://sports.core.api.espn.com/v2/sports/tennis/athletes/${id}?lang=en&region=us`,2));
     try{cache.setItem(k,JSON.stringify({t:Date.now(),v}))}catch(e){}
     return v;
   }
   async function fetchAthleteDetail(id){
-    const a=await getJSON(`https://sports.core.api.espn.com/v2/sports/tennis/athletes/${id}?lang=en&region=us`,2);
-    const bp=a.birthPlace||{};
-    return{id,name:a.displayName||a.fullName,age:a.age,flag:a.flag&&a.flag.href,country:a.flag&&a.flag.alt,
-      hand:a.hand&&a.hand.displayValue,heightIn:a.height,dob:a.dateOfBirth,debutYear:a.debutYear,
-      birthPlace:[bp.city,bp.country].filter(Boolean).join(", ")};
+    const b=await loadBundle(),x=fromBundle(id,b);
+    if(x)return x;
+    return fromEspn(id,await getJSON(`https://sports.core.api.espn.com/v2/sports/tennis/athletes/${id}?lang=en&region=us`,2));
   }
   async function fetchAthletes(ids,cache,onProgress,pool=10){
-    const out={};let i=0,done=0;
-    async function worker(){while(i<ids.length){const id=ids[i++];try{out[id]=await fetchAthlete(id,cache)}catch(e){out[id]={id,name:"Player "+id}}onProgress&&onProgress(++done,ids.length)}}
-    await Promise.all(Array.from({length:pool},worker));return out;
+    const bundle=await loadBundle(),out={};let done=0;
+    const rest=[];
+    ids.forEach(id=>{const x=fromBundle(id,bundle);if(x){out[id]=x;onProgress&&onProgress(++done,ids.length)}else rest.push(id)});
+    let i=0;
+    async function worker(){while(i<rest.length){const id=rest[i++];try{out[id]=await fetchAthlete(id,cache)}catch(e){out[id]={id,name:"Player "+id}}onProgress&&onProgress(++done,ids.length)}}
+    await Promise.all(Array.from({length:Math.min(pool,rest.length)},worker));
+    return out;
   }
 
   /* ---------- scoreboard parsing ---------- */
