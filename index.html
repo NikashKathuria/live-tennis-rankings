@@ -453,6 +453,12 @@ function setTheme(){document.body.dataset.tour=S.tour;$("#brand").textContent=S.
 // Players from Russia and Belarus compete as neutral athletes, so their flags are not shown.
 const HIDE_FLAG=/^(russia|belarus)$/i,HIDE_FLAG_URL=/\/(rus|blr)\.png/i;
 const showFlag=a=>!!a.flag&&!HIDE_FLAG.test(a.country||"")&&!HIDE_FLAG_URL.test(a.flag);
+// Flags are self-hosted small images (flags/<code>.png); fall back to ESPN's if one is missing
+const flagImg=(a,cls="fl",lazy=true)=>{
+  const m=/\/countries\/\d+\/([a-z]+)\.png/.exec(a.flag||"");
+  const src=m?`flags/${m[1]}.png`:a.flag;
+  return`<img class="${cls}" ${lazy?'loading="lazy" ':""}src="${esc(src)}" alt="${esc(a.country||"")}" onerror="this.onerror=null;this.src='${esc(a.flag)}'">`;
+};
 const lastName=n=>(n||"").split(" ").slice(1).join(" ")||n||"";
 const shortName=n=>{const p=(n||"").split(" ");return p.length>1?p[0][0]+". "+p.slice(1).join(" "):n||""};
 function frozenNote(T,d){
@@ -510,7 +516,7 @@ function render(){
     return`<tr class="r ${fl} ${op?"open":""} ${r.move>0?"mu":r.move<0?"md":""} ${r.rank<=3?"t"+r.rank:""}" data-id="${r.p.id}">
       <td class="rk"><span class="rb${r.tied?" tie":""}" ${r.tied?'title="Level on points with another player; the tours break ties by tournaments played, which this free data doesn\'t include"':""}>${r.tied?"T":""}${r.rank}</span><div class="mvs">${r.move?`<span class="${r.move>0?"up":"dn"}">${r.move>0?"▲":"▼"}${Math.abs(r.move)}</span>`:""}</div></td><td class="hp">${mvHtml(r.move)}</td>
       <td class="hp"><button class="star ${S.watch.has(r.p.id)?"on":""}" data-star="${r.p.id}" aria-label="Watch">${S.watch.has(r.p.id)?"★":"☆"}</button></td>
-      <td class="pl"><div class="plw">${showFlag(a)?`<img class="fl" loading="lazy" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:`<span class="fl blank"></span>`}<div class="plt"><a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span>${r.best?`<div class="sub2">${statusHtml(r)}</div>`:""}</div></div></td>
+      <td class="pl"><div class="plw">${showFlag(a)?flagImg(a):`<span class="fl blank"></span>`}<div class="plt"><a class="nm" href="#/player/${S.tour}/${r.p.id}">${esc(a.name||"…")}</a><span class="cc">(#${r.p.rank})</span>${r.best?`<div class="sub2">${statusHtml(r)}</div>`:""}</div></div></td>
       <td class="hm n">${a.age??""}</td><td class="n hm">${fmt(r.p.points)}</td>
       <td class="n hm">${r.def?"−"+fmt(r.def):"–"}</td><td class="n hm">${r.earned?"+"+fmt(r.earned):"–"}</td>
       <td class="n lp"><b>${fmt(r.live)}</b></td><td class="n">${diffHtml(r.diff)}</td><td class="wk hp">${statusHtml(r)}</td></tr>`
@@ -589,7 +595,7 @@ function historyHtml(h){
 }
 function playerHtml(T,d,row){
   const p=row.p,a=T.ath[p.id]||{},det=(S.pc[S.tour+p.id]||{}).detail||{},tour=S.tour;
-  const flag=showFlag(a)?`<img class="fl big" src="${esc(a.flag)}" alt="${esc(a.country||"")}">`:"";
+  const flag=showFlag(a)?flagImg(a,"fl big",false):"";
   const ht=det.heightIn?`${Math.round(det.heightIn*2.54)} cm`:"";
   const bio=[a.country&&!HIDE_FLAG.test(a.country)?esc(a.country):"",a.age?`age ${a.age}`:"",a.hand?esc(a.hand):"",ht,det.birthPlace?"born in "+esc(det.birthPlace):"",det.debutYear?"pro since "+det.debutYear:""].filter(Boolean).join(" · ");
   // per-event breakdown

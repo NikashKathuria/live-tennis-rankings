@@ -20,17 +20,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Fetch newest rankings and rebuild history files
+      - name: Install Pillow (for flag images)
+        run: pip install pillow
+      - name: Fetch newest rankings, rebuild history files, add any new flags
         run: |
           python3 rankings_store.py backfill
           python3 rankings_store.py latest
           python3 rankings_store.py migrate
           python3 build_static.py
+          python3 build_flags.py
       - name: Commit changes
         run: |
           git config user.name "rankings-bot"
           git config user.email "rankings-bot@users.noreply.github.com"
-          git add data
+          git add data flags
           git diff --cached --quiet || git commit -m "Update rankings archive"
           git push
       - name: Keep the schedule alive
